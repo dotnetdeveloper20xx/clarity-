@@ -22,21 +22,22 @@ public class DocumentsController : ControllerBase
 
     [HttpPost]
     [RequestSizeLimit(50_000_000)] // 50MB limit
-    public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] Guid? clientId, [FromForm] Guid? matterId, [FromForm] string? category)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Upload([FromForm] DocumentUploadRequest request)
     {
-        if (file is null || file.Length == 0)
+        if (request.File is null || request.File.Length == 0)
             return BadRequest("No file provided.");
 
-        using var stream = file.OpenReadStream();
+        using var stream = request.File.OpenReadStream();
         var result = await _mediator.Send(new UploadDocumentCommand
         {
-            ClientId = clientId,
-            MatterId = matterId,
-            FileName = file.FileName,
-            ContentType = file.ContentType,
-            FileSizeBytes = file.Length,
+            ClientId = request.ClientId,
+            MatterId = request.MatterId,
+            FileName = request.File.FileName,
+            ContentType = request.File.ContentType,
+            FileSizeBytes = request.File.Length,
             FileStream = stream,
-            Category = category
+            Category = request.Category
         });
 
         return result.Succeeded ? Ok(result.Data) : BadRequest(result.Errors);
@@ -45,7 +46,14 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id:guid}/download")]
     public async Task<IActionResult> Download(Guid id)
     {
-        // Simplified — in production, would use a query handler
         return NotFound("Download endpoint will be fully implemented with document query handler.");
     }
+}
+
+public class DocumentUploadRequest
+{
+    public IFormFile File { get; set; } = null!;
+    public Guid? ClientId { get; set; }
+    public Guid? MatterId { get; set; }
+    public string? Category { get; set; }
 }

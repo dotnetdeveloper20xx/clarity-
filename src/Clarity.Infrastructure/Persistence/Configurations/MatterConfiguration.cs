@@ -22,6 +22,7 @@ public class MatterConfiguration : IEntityTypeConfiguration<Matter>
         builder.HasIndex(m => m.LeadConsultantId);
         builder.HasIndex(m => m.Status);
 
+        builder.HasOne(m => m.LeadConsultant).WithMany().HasForeignKey(m => m.LeadConsultantId).OnDelete(DeleteBehavior.NoAction);
         builder.HasMany(m => m.Notes).WithOne(n => n.Matter).HasForeignKey(n => n.MatterId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(m => m.Tasks).WithOne(t => t.Matter).HasForeignKey(t => t.MatterId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(m => m.TeamMembers).WithOne(tm => tm.Matter).HasForeignKey(tm => tm.MatterId).OnDelete(DeleteBehavior.Cascade);

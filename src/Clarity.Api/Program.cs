@@ -4,6 +4,7 @@ using Clarity.Api.Services;
 using Clarity.Application;
 using Clarity.Application.Common.Interfaces;
 using Clarity.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
@@ -57,6 +58,12 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    // Resolve conflicting schema names
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", ".").Replace("`", "_"));
+    
+    // Ignore types that Swagger can't serialize
+    options.MapType<Stream>(() => new Microsoft.OpenApi.Models.OpenApiSchema { Type = "string", Format = "binary" });
 });
 
 // Authentication
@@ -100,12 +107,27 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Seed database (development only)
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<Clarity.Infrastructure.Persistence.ApplicationDbContext>();
+    await context.Database.MigrateAsync();
+    await Clarity.Infrastructure.Persistence.ApplicationDbContextSeed.SeedAsync(context);
+}
+
 // Middleware pipeline
 app.UseMiddleware<CorrelationIdMiddleware>();
-app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Clarity API v1"));
+}
+else
+{
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Clarity API v1"));
 }
@@ -117,6 +139,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
+app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", timestamp = DateTime.UtcNow }));
 
 app.Run();
 

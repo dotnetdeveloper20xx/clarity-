@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Clarity.Application.Matters.Commands.UpdateMatterStatus;
 
-public record UpdateMatterStatusCommand : IRequest<Result<Unit>>
+public record UpdateMatterStatusCommand : IRequest<Result>
 {
     public Guid Id { get; init; }
     public MatterStatus NewStatus { get; init; }

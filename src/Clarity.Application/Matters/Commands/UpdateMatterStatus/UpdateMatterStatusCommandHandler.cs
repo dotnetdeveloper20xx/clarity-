@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Clarity.Application.Matters.Commands.UpdateMatterStatus;
 
-public class UpdateMatterStatusCommandHandler : IRequestHandler<UpdateMatterStatusCommand, Result<Unit>>
+public class UpdateMatterStatusCommandHandler : IRequestHandler<UpdateMatterStatusCommand, Result>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
@@ -24,7 +24,7 @@ public class UpdateMatterStatusCommandHandler : IRequestHandler<UpdateMatterStat
         _dateTime = dateTime;
     }
 
-    public async Task<Result<Unit>> Handle(UpdateMatterStatusCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(UpdateMatterStatusCommand request, CancellationToken cancellationToken)
     {
         var matter = await _context.Matters
             .FirstOrDefaultAsync(m => m.Id == request.Id && !m.IsDeleted, cancellationToken);
@@ -33,7 +33,7 @@ public class UpdateMatterStatusCommandHandler : IRequestHandler<UpdateMatterStat
             throw new NotFoundException(nameof(Matter), request.Id);
 
         if (!IsValidTransition(matter.Status, request.NewStatus))
-            return Result<Unit>.Failure($"Cannot transition from {matter.Status} to {request.NewStatus}.");
+            return Result.Failure($"Cannot transition from {matter.Status} to {request.NewStatus}.");
 
         matter.Status = request.NewStatus;
         matter.ModifiedAt = _dateTime.UtcNow;
@@ -46,7 +46,7 @@ public class UpdateMatterStatusCommandHandler : IRequestHandler<UpdateMatterStat
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result<Unit>.Success(Unit.Value);
+        return Result.Success();
     }
 
     private static bool IsValidTransition(MatterStatus current, MatterStatus target)

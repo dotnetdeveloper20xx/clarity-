@@ -19,7 +19,7 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.Ignore(rt => rt.IsExpired);
         builder.Ignore(rt => rt.IsActive);
 
-        builder.HasOne(rt => rt.User).WithMany().HasForeignKey(rt => rt.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(rt => rt.User).WithMany().HasForeignKey(rt => rt.UserId).OnDelete(DeleteBehavior.NoAction);
     }
 }
 
@@ -33,8 +33,8 @@ public class UserSessionConfiguration : IEntityTypeConfiguration<UserSession>
         builder.Property(s => s.DeviceInfo).HasMaxLength(500);
         builder.Property(s => s.IpAddress).HasMaxLength(50);
 
-        builder.HasOne(s => s.User).WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(s => s.RefreshToken).WithMany().HasForeignKey(s => s.RefreshTokenId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(s => s.User).WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(s => s.RefreshToken).WithMany().HasForeignKey(s => s.RefreshTokenId).OnDelete(DeleteBehavior.NoAction);
     }
 }
 
@@ -59,8 +59,8 @@ public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermissi
         builder.HasKey(rp => rp.Id);
         builder.HasIndex(rp => new { rp.RoleId, rp.PermissionId }).IsUnique();
 
-        builder.HasOne(rp => rp.Role).WithMany().HasForeignKey(rp => rp.RoleId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(rp => rp.Permission).WithMany().HasForeignKey(rp => rp.PermissionId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(rp => rp.Role).WithMany().HasForeignKey(rp => rp.RoleId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(rp => rp.Permission).WithMany().HasForeignKey(rp => rp.PermissionId).OnDelete(DeleteBehavior.NoAction);
     }
 }
 
@@ -72,8 +72,8 @@ public class MatterAccessConfiguration : IEntityTypeConfiguration<MatterAccess>
         builder.HasKey(ma => ma.Id);
         builder.HasIndex(ma => new { ma.MatterId, ma.UserId }).IsUnique();
 
-        builder.HasOne(ma => ma.Matter).WithMany().HasForeignKey(ma => ma.MatterId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(ma => ma.User).WithMany().HasForeignKey(ma => ma.UserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(ma => ma.Matter).WithMany().HasForeignKey(ma => ma.MatterId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne(ma => ma.User).WithMany().HasForeignKey(ma => ma.UserId).OnDelete(DeleteBehavior.NoAction);
     }
 }
 
