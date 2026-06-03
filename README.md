@@ -1,464 +1,274 @@
-# LegalPlatform Enterprise
+# Clarity — Enterprise Legal Practice Management Platform
 
-> Enterprise Legal Practice Management Platform built with ASP.NET Core, Angular, SQL Server, and Azure-ready Architecture.
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-83%20passing-brightgreen)]()
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)]()
+[![Angular](https://img.shields.io/badge/Angular-19-DD0031)]()
+[![License](https://img.shields.io/badge/license-MIT-blue)]()
 
----
+> A production-grade legal practice management platform built with ASP.NET Core, Angular 19, SQL Server, and Clean Architecture. Designed for 10+ years of operational life.
 
-## Overview
-
-LegalPlatform Enterprise is a portfolio project designed to demonstrate how a modern enterprise software team might design, build, operate, and evolve a mission-critical legal practice management platform.
-
-This project is heavily inspired by the challenges faced by real-world legal, financial, insurance, and professional services organisations where business processes, compliance, auditability, security, and long-term maintainability are as important as writing code.
-
-The goal is not to build another CRUD application.
-
-The goal is to demonstrate enterprise software engineering.
+![Clarity Architecture](https://img.shields.io/badge/architecture-Clean%20Architecture-orange)
+![CQRS](https://img.shields.io/badge/pattern-CQRS%20%2B%20MediatR-blueviolet)
+![Tailwind](https://img.shields.io/badge/css-Tailwind%20%2B%20DaisyUI-06B6D4)
 
 ---
 
-## Why This Project Exists
+## What is Clarity?
 
-Many portfolio projects demonstrate technical features.
+Clarity is a full-stack enterprise platform that manages the complete lifecycle of legal work: client onboarding, matter management, document handling, time recording, billing, payments, compliance, and reporting — all in one secure, auditable system.
 
-Very few demonstrate how enterprise systems are actually built and maintained.
-
-This repository exists to showcase:
-
-* Clean Architecture
-* Domain-Driven Design concepts
-* CQRS
-* Enterprise Angular development
-* Complex frontend state management
-* SQL Server design and performance optimisation
-* Authentication and Authorisation
-* Audit and Compliance
-* Background Processing
-* Reporting and Diagnostics
-* Production Support Considerations
-* DevOps and Release Management
-* Software Engineering Leadership Practices
-
-This project attempts to model the type of system a team might build and support over many years.
+It demonstrates how real-world enterprise software is designed, built, tested, deployed, and maintained by professional engineering teams.
 
 ---
 
-# The Business Problem
+## Quick Start
 
-A modern legal practice manages:
+### Prerequisites
 
-* Clients
-* Matters
-* Legal Documents
-* Time Recording
-* Billing
-* Payments
-* Compliance Reviews
-* Reporting
-* Operational Workflows
+- .NET 10 SDK
+- Node.js 20+
+- SQL Server (local instance or Docker)
 
-Many firms use multiple disconnected systems.
+### Backend
 
-LegalPlatform Enterprise aims to bring these capabilities together into a single platform.
-
-The platform is designed for:
-
-* Solicitors
-* Consultants
-* Legal Assistants
-* Team Leaders
-* Finance Teams
-* Compliance Teams
-* Support Teams
-* Administrators
-* Clients
-
----
-
-# Key Business Capabilities
-
-## Client Management
-
-Manage individual and corporate clients.
-
-Features include:
-
-* Contact Management
-* Client Relationships
-* Communication Preferences
-* Client History
-* Risk Classification
-
----
-
-## Matter Management
-
-The core business capability.
-
-Features include:
-
-* Matter Lifecycle
-* Matter Status Management
-* Notes
-* Tasks
-* Timelines
-* Assignments
-* Activity Tracking
-
----
-
-## Document Management
-
-Manage legal documentation.
-
-Features include:
-
-* Upload
-* Versioning
-* Categorisation
-* Security Controls
-* Access Tracking
-
----
-
-## Time Recording
-
-Track billable and non-billable work.
-
-Features include:
-
-* Time Entries
-* Approval Workflows
-* Billing Integration
-* Productivity Reporting
-
----
-
-## Billing & Payments
-
-Financial operations support.
-
-Features include:
-
-* Invoice Generation
-* Payment Allocation
-* Outstanding Balances
-* Financial Reporting
-* Audit Controls
-
----
-
-## Compliance
-
-Support legal and regulatory requirements.
-
-Features include:
-
-* AML Reviews
-* Risk Assessments
-* Compliance Flags
-* Review Workflows
-* Audit History
-
----
-
-## Reporting & Analytics
-
-Provide operational visibility.
-
-Features include:
-
-* Matter Dashboards
-* Finance Dashboards
-* Compliance Dashboards
-* Productivity Reporting
-* KPI Monitoring
-
----
-
-# Technical Architecture
-
-This project follows a Clean Architecture approach.
-
-```text
-LegalPlatform.Domain
-LegalPlatform.Application
-LegalPlatform.Infrastructure
-LegalPlatform.Api
-LegalPlatform.Web
-LegalPlatform.Worker
-LegalPlatform.Tests
+```bash
+git clone https://github.com/dotnetdeveloper20xx/clarity-.git
+cd clarity-
+dotnet restore
+dotnet build
+dotnet test                              # 83 tests pass
+cd src/Clarity.Api
+dotnet ef database update                # Create database
+dotnet run                               # API at https://localhost:5001
 ```
 
-## Domain Layer
+### Frontend
 
-Contains:
-
-* Business Entities
-* Value Objects
-* Domain Rules
-* Enumerations
-
-No infrastructure dependencies.
-
----
-
-## Application Layer
-
-Contains:
-
-* CQRS
-* Commands
-* Queries
-* Validators
-* Business Workflows
-* Use Cases
-
----
-
-## Infrastructure Layer
-
-Contains:
-
-* Entity Framework Core
-* SQL Server
-* File Storage
-* External Integrations
-* Email Services
-* Background Processing
-
----
-
-## API Layer
-
-Contains:
-
-* REST Endpoints
-* Authentication
-* Authorization
-* Middleware
-* Swagger
-
----
-
-## Angular Frontend
-
-Contains:
-
-* Enterprise UI
-* Feature Modules
-* State Management
-* Role-Based Navigation
-* Responsive Design
-* Dashboard Experience
-
----
-
-# Frontend Architecture
-
-The frontend is intentionally designed to demonstrate enterprise Angular patterns.
-
-Technologies:
-
-* Angular
-* TypeScript
-* Tailwind CSS
-* DaisyUI
-* RxJS
-* Angular Signals
-
-Key concepts:
-
-* Feature Stores
-* State Isolation
-* Route Guards
-* Interceptors
-* Reusable Components
-* Dashboard Framework
-
-The application avoids component-driven API calls.
-
-Instead:
-
-```text
-Component
-    ↓
-Feature Store
-    ↓
-API Service
-    ↓
-Backend API
+```bash
+cd src/Clarity.Web
+npm install
+npm start                                # UI at http://localhost:4200
 ```
 
-This keeps responsibilities clear and maintainable.
+### Docker (Full Stack)
+
+```bash
+docker compose up                        # SQL Server + API at http://localhost:5001
+```
+
+### Default Login
+
+| Email | Password | Roles |
+|-------|----------|-------|
+| admin@clarity.local | Admin123! | Admin |
+| sarah.johnson@clarity.local | Password1! | Consultant, TeamLeader |
+| finance@clarity.local | Password1! | Finance |
+| compliance@clarity.local | Password1! | Compliance |
 
 ---
 
-# Enterprise State Management
+## Architecture
 
-This project demonstrates complex frontend state management.
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Angular 19 (SPA)                        │
+│    Tailwind + DaisyUI │ Signals │ Feature Stores        │
+└────────────────────────────┬────────────────────────────┘
+                             │ REST / JWT
+┌────────────────────────────▼────────────────────────────┐
+│                 ASP.NET Core API                         │
+│   Controllers │ Middleware │ Swagger │ Health Checks     │
+└────────────────────────────┬────────────────────────────┘
+                             │ MediatR
+┌────────────────────────────▼────────────────────────────┐
+│              Application Layer (CQRS)                    │
+│   Commands │ Queries │ Validators │ Workflows           │
+└──────────┬─────────────────────────────────┬────────────┘
+           │                                 │
+┌──────────▼──────────┐         ┌────────────▼────────────┐
+│   Domain Layer      │         │  Infrastructure Layer   │
+│ Entities │ Enums    │         │ EF Core │ SQL Server    │
+│ Interfaces │ Rules  │         │ Services │ Storage      │
+└─────────────────────┘         └─────────────────────────┘
+```
 
-Examples:
-
-* AuthStore
-* DashboardStore
-* ClientStore
-* MatterStore
-* BillingStore
-* ComplianceStore
-* NotificationStore
-* AuditStore
-
-The objective is to model the type of state architecture commonly found in large enterprise systems.
-
----
-
-# Database Design
-
-Database technology:
-
-* SQL Server
-* Entity Framework Core
-
-Features:
-
-* Audit Logging
-* Soft Deletes
-* Historical Tracking
-* Reporting Read Models
-* Performance Indexing
-* Migration Strategy
-
-The database is designed to support long-term growth and large datasets.
+**Dependency Rule**: Domain → nothing. Application → Domain. Infrastructure → Application + Domain. API → Application + Infrastructure.
 
 ---
 
-# Security
+## Tech Stack
 
-Security is a first-class concern.
-
-Features include:
-
-* JWT Authentication
-* Role-Based Access Control
-* Permission-Based Authorization
-* Matter-Level Security
-* Client-Level Access Control
-* Audit Logging
-* Session Management
-* Secure Configuration
+| Layer | Technology |
+|-------|-----------|
+| Backend | ASP.NET Core 10, C# 13, MediatR, FluentValidation, Serilog |
+| Frontend | Angular 19, TypeScript, Tailwind CSS, DaisyUI, Signals |
+| Database | SQL Server, Entity Framework Core 9, Code-First Migrations |
+| Auth | JWT Bearer + Refresh Token Rotation, RBAC |
+| DevOps | Docker, GitHub Actions CI/CD, Multi-environment configs |
+| Testing | xUnit, FluentAssertions, 83 tests (unit + architecture) |
 
 ---
 
-# Background Processing
+## Key Features
 
-The platform includes a worker service for asynchronous operations.
+### Business Capabilities
 
-Examples:
+| Module | Description |
+|--------|-------------|
+| 👥 Client Management | Create, search, filter clients with full audit trail |
+| 📁 Matter Management | Lifecycle workflows (Open → InProgress → Closed) with precondition enforcement |
+| ⏱️ Time Recording | Billable/non-billable tracking with approval workflows |
+| 💰 Billing | Invoice generation from approved time, issue/pay lifecycle |
+| 💳 Payments | Payment recording with automatic invoice status updates |
+| 📄 Documents | Upload, version, categorise with secure storage |
+| 🛡️ Compliance | AML/KYC checks that gate matter progression |
+| 📊 Dashboards | Real-time KPIs, financial summaries, aged debt |
+| 🔍 Global Search | Unified search across clients, matters, invoices |
+| 📋 Audit Trail | Immutable, searchable record of every significant action |
 
-* Notifications
-* Document Processing
-* Scheduled Jobs
-* Reporting Tasks
-* Workflow Automation
+### Technical Capabilities
 
-The design includes:
-
-* Retry Handling
-* Dead Letter Processing
-* Operational Monitoring
-
----
-
-# Reporting & Diagnostics
-
-Enterprise systems require visibility.
-
-Features include:
-
-* Business Dashboards
-* Search
-* Audit Search
-* Correlation Tracking
-* Diagnostics Dashboard
-* Health Checks
-* Operational Reporting
+| Capability | Implementation |
+|-----------|---------------|
+| Workflow Engine | Status transition validators with business rule enforcement |
+| Background Jobs | Queue-based with retry and dead-letter handling |
+| Notifications | In-app with role-based delivery |
+| Feature Flags | Configuration-based gradual rollout |
+| Correlation Tracking | End-to-end request tracing via X-Correlation-Id |
+| CSV Exports | Server-side generation for clients, invoices, time entries |
+| Health Checks | SQL Server connectivity monitoring |
+| Account Security | Lockout after 5 failed attempts, session management |
 
 ---
 
-# DevOps & Deployment
+## Project Structure
 
-The project is designed with enterprise delivery practices in mind.
-
-Topics covered:
-
-* CI/CD
-* Branching Strategy
-* Environment Management
-* Release Pipelines
-* Rollback Planning
-* Production Readiness
-* Monitoring
-* Disaster Recovery
-
----
-
-# Learning Objectives
-
-This repository is intended to demonstrate practical experience in:
-
-* ASP.NET Core
-* Angular
-* SQL Server
-* Enterprise Architecture
-* Software Design
-* Cloud-Ready Systems
-* Production Support
-* Leadership Thinking
-* Long-Term Maintainability
-
-The project is intentionally designed to resemble the complexity of real-world business systems rather than tutorial applications.
+```
+clarity-/
+├── src/
+│   ├── Clarity.Domain/           # Entities, enums, interfaces (0 dependencies)
+│   ├── Clarity.Application/      # CQRS commands/queries, validators, workflows
+│   ├── Clarity.Infrastructure/   # EF Core, SQL Server, services
+│   ├── Clarity.Api/              # Controllers, middleware, auth, Swagger
+│   └── Clarity.Web/              # Angular 19 SPA
+├── tests/
+│   └── Clarity.Tests/            # 83 tests (unit, architecture, workflow)
+├── docs/                          # 67 documentation files
+├── .github/workflows/             # CI + Release pipelines
+├── Dockerfile.api                 # Multi-stage Docker build
+├── docker-compose.yml             # Full local development stack
+└── Clarity.sln                    # Solution file
+```
 
 ---
 
-# Current Status
+## Testing
 
-🚧 Active Development
+```bash
+dotnet test
+```
 
-This repository is being developed in phases.
-
-Current roadmap includes:
-
-* Business Discovery
-* Domain Modelling
-* Database Design
-* Backend APIs
-* Angular Frontend
-* Workflow Engine
-* Reporting
-* Security
-* DevOps
-* Testing & Quality
-
-Progress will be documented throughout development.
+**83 tests** covering:
+- Validator rules (client, time entry)
+- Domain entity defaults
+- Workflow transitions (matter, time entry, invoice — valid and invalid paths)
+- Architecture rules (dependency direction, layer isolation)
+- Security (refresh tokens, access levels)
+- Financial calculations (invoice totals, payment allocation)
 
 ---
 
-# Future Enhancements
+## Documentation
 
-Potential future enhancements include:
+The `docs/` folder contains **67 files** covering every aspect of the platform:
 
-* Azure Service Bus
-* SignalR Real-Time Updates
-* Azure Blob Storage
-* OpenTelemetry
-* AI-Assisted Document Analysis
-* OCR Processing
-* Workflow Designer
-* Multi-Tenant Support
-* Mobile Applications
+| Category | Key Documents |
+|----------|--------------|
+| Business | business-overview, user-roles, core-workflows, business-rules, glossary |
+| Architecture | architecture-overview, domain-model, domain-boundaries, cqrs-strategy, event-strategy |
+| Database | database-design, table-catalog, indexing-strategy, soft-delete-strategy |
+| API | api-guide, error-handling, authentication-authorization |
+| Frontend | frontend-architecture, state-management, angular-folder-structure |
+| Workflows | workflow-engine, matter-lifecycle, time-recording-workflow, billing-workflow |
+| Security | security-model, permission-matrix, session-management, secure-configuration |
+| DevOps | devops-strategy, environment-strategy, release-management, disaster-recovery |
+| Quality | testing-strategy, definition-of-done, code-review-guide, technical-debt-register |
+| Onboarding | developer-onboarding, how-to-add-a-feature, support-playbooks |
+| ADRs | 6 Architecture Decision Records explaining key choices |
 
 ---
 
-# Author
+## API Endpoints
 
-Built as a learning and portfolio project to demonstrate enterprise software engineering practices, architecture, scalability, maintainability, and real-world development approaches using modern Microsoft technologies.
+| Area | Endpoints |
+|------|-----------|
+| Auth | login, refresh, logout, change-password, sessions |
+| Clients | CRUD + search + filter |
+| Matters | CRUD + status transitions + timeline |
+| Time Entries | record, approve, submit, reject |
+| Invoices | create (from time), issue, list |
+| Payments | record payment |
+| Documents | upload |
+| Compliance | create checks |
+| Dashboard | KPIs, financial summary |
+| Search | global search across entities |
+| Export | CSV for clients, invoices, time entries |
+| Audit | searchable audit log |
+| Diagnostics | job monitoring, system info, retry |
+| Security | audit log, sessions, locked accounts, unlock |
+| Notifications | list, unread count, mark read |
+| Workflow | matter transitions, time entry submit/reject |
+
+Full API docs available via Swagger at `/swagger` when running locally.
+
+---
+
+## Development Phases
+
+This project was built in 10 structured phases:
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| 1 | Business Discovery & Documentation | ✅ Complete |
+| 2 | Domain Modelling & Architecture | ✅ Complete |
+| 3 | Database Design & Data Architecture | ✅ Complete |
+| 4 | Backend API & Application Layer | ✅ Complete |
+| 5 | Angular Frontend & State Management | ✅ Complete |
+| 6 | Workflow Engine & Background Processing | ✅ Complete |
+| 7 | Reporting, Dashboards & Search | ✅ Complete |
+| 8 | Security, Permissions & Data Protection | ✅ Complete |
+| 9 | DevOps, Deployment & Production Readiness | ✅ Complete |
+| 10 | Testing, Quality Gates & Onboarding | ✅ Complete |
+
+---
+
+## Future Enhancements
+
+- Azure Service Bus for async messaging
+- SignalR real-time notifications
+- Azure Blob Storage integration
+- OpenTelemetry distributed tracing
+- Multi-tenant support
+- Two-factor authentication
+- Document content search (OCR + full-text)
+- Mobile responsive optimisation
+- Performance testing with realistic data volumes
+
+---
+
+## Contributing
+
+This is a portfolio/learning project. Feel free to fork and adapt for your own use.
+
+---
+
+## Author
+
+Built to demonstrate enterprise software engineering practices — architecture, scalability, security, maintainability, and professional delivery — using modern Microsoft and Angular technologies.
+
+---
+
+## License
+
+[MIT](LICENSE)
