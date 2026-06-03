@@ -1,0 +1,66 @@
+name: Release - Build and Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-backend:
+    name: Build Backend Artifact
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish API
+        run: dotnet publish src/Clarity.Api/Clarity.Api.csproj -c Release -o ./publish/api
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clarity-api-${{ github.ref_name }}
+          path: ./publish/api
+
+  build-frontend:
+    name: Build Frontend Artifact
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Clarity.Web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/Clarity.Web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build -- --configuration production
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clarity-web-${{ github.ref_name }}
+          path: src/Clarity.Web/dist/clarity-web
