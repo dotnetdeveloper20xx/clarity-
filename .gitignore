@@ -315,6 +315,12 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# Angular cache
+.angular/
+
+# Temp scaffolding
+clarity-web-temp/
+
 # Visual Studio 6 build log
 *.plg
 
