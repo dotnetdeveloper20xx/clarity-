@@ -4,32 +4,104 @@
 
 @layer base {
   body {
-    @apply bg-base-200 text-neutral min-h-screen;
+    @apply bg-slate-50 text-slate-900 min-h-screen antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    @apply tracking-tight;
   }
 }
 
 @layer components {
   .page-container {
-    @apply p-6 max-w-7xl mx-auto;
+    @apply p-8 max-w-[1400px] mx-auto;
   }
 
   .card-section {
-    @apply bg-base-100 rounded-lg shadow-sm border border-base-300 p-6;
+    @apply bg-white rounded-xl shadow-sm border border-slate-200 p-6;
   }
 
   .page-title {
-    @apply text-2xl font-bold text-navy-900;
+    @apply text-2xl font-bold text-slate-900 tracking-tight;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-500 mt-1;
   }
 
   .section-title {
-    @apply text-lg font-semibold text-navy-800;
+    @apply text-base font-semibold text-slate-800 tracking-tight;
   }
 
   .data-label {
-    @apply text-sm font-medium text-navy-600;
+    @apply text-xs font-medium text-slate-500 uppercase tracking-wider;
   }
 
   .data-value {
-    @apply text-sm text-navy-900;
+    @apply text-sm text-slate-900 mt-0.5;
+  }
+
+  /* Professional table styling */
+  .table th {
+    @apply text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50 border-b-2 border-slate-200;
+  }
+
+  .table td {
+    @apply text-sm text-slate-700 border-b border-slate-100;
+  }
+
+  .table tbody tr:hover {
+    @apply bg-slate-50;
+  }
+
+  /* Status badges - professional muted tones */
+  .status-active { @apply bg-emerald-50 text-emerald-700 border border-emerald-200; }
+  .status-pending { @apply bg-amber-50 text-amber-700 border border-amber-200; }
+  .status-closed { @apply bg-slate-100 text-slate-600 border border-slate-300; }
+  .status-error { @apply bg-red-50 text-red-700 border border-red-200; }
+  .status-info { @apply bg-blue-50 text-blue-700 border border-blue-200; }
+  .status-warning { @apply bg-orange-50 text-orange-700 border border-orange-200; }
+
+  /* KPI cards */
+  .kpi-card {
+    @apply bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-all duration-200;
+  }
+
+  .kpi-value {
+    @apply text-2xl font-bold text-slate-900 mt-2;
+  }
+
+  .kpi-label {
+    @apply text-xs font-medium text-slate-500 uppercase tracking-wider;
+  }
+
+  .kpi-trend-up { @apply text-xs text-emerald-600 mt-1; }
+  .kpi-trend-down { @apply text-xs text-red-600 mt-1; }
+  .kpi-trend-neutral { @apply text-xs text-slate-500 mt-1; }
+
+  /* Form inputs - corporate clean */
+  .input, .select, .textarea {
+    @apply border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-lg;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white border-none shadow-sm;
+  }
+
+  .btn-outline {
+    @apply border-slate-300 text-slate-700 hover:bg-slate-50;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    @apply bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap gap-3 items-center;
+  }
+
+  /* Sort header */
+  .sortable-header {
+    @apply cursor-pointer hover:text-blue-600 select-none;
   }
 }
