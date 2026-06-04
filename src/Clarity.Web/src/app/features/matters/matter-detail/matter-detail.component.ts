@@ -174,9 +174,13 @@ interface DocumentDto { id: string; fileName: string; contentType: string; fileS
         @if (activeTab() === 'billing') {
           <div class="flex justify-between items-center mb-4">
             <h2 class="section-title">Invoices</h2>
+            <button (click)="createInvoice()" [disabled]="creatingInvoice()" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50">
+              @if (creatingInvoice()) { <span class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span> }
+              + Generate Invoice
+            </button>
           </div>
           @if (invoices().length === 0 && !invoicesLoading()) {
-            <div class="card-section text-center py-12"><p class="text-sm text-slate-500">No invoices generated for this matter yet.</p></div>
+            <div class="card-section text-center py-12"><p class="text-sm text-slate-500">No invoices generated for this matter yet. Click "Generate Invoice" to create one from approved time entries.</p></div>
           }
           @if (invoices().length > 0) {
             <div class="card-section overflow-x-auto">
@@ -304,6 +308,7 @@ export class MatterDetailComponent implements OnInit {
   notes = signal<NoteDto[]>([]); notesLoading = signal(false);
   documents = signal<DocumentDto[]>([]); docsLoading = signal(false);
   uploading = signal(false);
+  creatingInvoice = signal(false);
 
   showAddNote = false; showAddTask = false; showUploadDoc = false; showRecordTime = false;
   newNote = { content: '', isClientVisible: false };
@@ -375,6 +380,16 @@ export class MatterDetailComponent implements OnInit {
     this.http.post(`${environment.apiUrl}/documents`, formData).subscribe({
       next: () => { this.showUploadDoc = false; this.selectedFile = null; this.uploadCategory = ''; this.uploading.set(false); this.documents.set([]); this.loadDocuments(); this.toast.success('Document uploaded successfully'); },
       error: () => { this.uploading.set(false); this.toast.error('Failed to upload document'); }
+    });
+  }
+
+  createInvoice(): void {
+    const matter = this.store.selected();
+    if (!matter) return;
+    this.creatingInvoice.set(true);
+    this.http.post(`${environment.apiUrl}/invoices`, { matterId: matter.id, clientId: matter.clientId, taxRate: 20 }).subscribe({
+      next: () => { this.creatingInvoice.set(false); this.invoices.set([]); this.loadInvoices(); this.toast.success('Invoice generated from approved time entries'); },
+      error: (err) => { this.creatingInvoice.set(false); this.toast.error(err?.error?.[0] || err?.error?.title || 'No approved unbilled time entries found'); }
     });
   }
 
