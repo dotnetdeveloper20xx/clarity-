@@ -11,7 +11,6 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'clients', loadComponent: () => import('./features/clients/client-list/client-list.component').then(m => m.ClientListComponent) },
-      { path: 'clients/new', loadComponent: () => import('./features/clients/client-form/client-form.component').then(m => m.ClientFormComponent) },
       { path: 'clients/:id', loadComponent: () => import('./features/clients/client-detail/client-detail.component').then(m => m.ClientDetailComponent) },
       { path: 'matters', loadComponent: () => import('./features/matters/matter-list/matter-list.component').then(m => m.MatterListComponent) },
       { path: 'matters/:id', loadComponent: () => import('./features/matters/matter-detail/matter-detail.component').then(m => m.MatterDetailComponent) },
