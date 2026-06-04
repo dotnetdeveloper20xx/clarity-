@@ -326,6 +326,19 @@ public class AuthController : ControllerBase
 
     private static bool VerifyPassword(string password, string hash)
     {
+        // Support legacy SHA256 hashes (from seed data) and new PBKDF2
+        if (hash.StartsWith("PBKDF2$"))
+        {
+            var parts = hash.Split('$');
+            if (parts.Length != 4) return false;
+            var salt = Convert.FromBase64String(parts[1]);
+            var iterations = int.Parse(parts[2]);
+            var storedHash = Convert.FromBase64String(parts[3]);
+            using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(password, salt, iterations, System.Security.Cryptography.HashAlgorithmName.SHA256);
+            var computedHash = pbkdf2.GetBytes(32);
+            return CryptographicOperations.FixedTimeEquals(computedHash, storedHash);
+        }
+        // Legacy SHA256 fallback for seed data
         using var sha = SHA256.Create();
         var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
         return Convert.ToBase64String(bytes) == hash;
@@ -333,9 +346,13 @@ public class AuthController : ControllerBase
 
     private static string HashPassword(string password)
     {
-        using var sha = SHA256.Create();
-        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(bytes);
+        var salt = new byte[16];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(salt);
+        const int iterations = 100_000;
+        using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(password, salt, iterations, System.Security.Cryptography.HashAlgorithmName.SHA256);
+        var hash = pbkdf2.GetBytes(32);
+        return $"PBKDF2${Convert.ToBase64String(salt)}${iterations}${Convert.ToBase64String(hash)}";
     }
 
     private string? GetIpAddress()

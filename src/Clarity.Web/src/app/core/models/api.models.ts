@@ -22,6 +22,8 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  refreshToken: string;
+  expiresAt: string;
   email: string;
   fullName: string;
   roles: string[];

@@ -1,4 +1,4 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
@@ -9,10 +9,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
 
   return next(req).pipe(
-    catchError((error) => {
-      if (error.status === 401) {
-        authService.logout();
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !req.url.includes('/auth/login') && !req.url.includes('/auth/refresh')) {
+        // Token expired — try refresh
+        authService.refreshAccessToken();
       } else if (error.status === 403) {
+        // Could navigate to an access-denied page
         console.warn('Access denied:', req.url);
       }
       return throwError(() => error);

@@ -3,6 +3,7 @@ using Clarity.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Clarity.Api.Controllers;
 
@@ -13,15 +14,39 @@ public class DocumentsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IFileStorageService _fileStorage;
+    private readonly IApplicationDbContext _context;
 
-    public DocumentsController(IMediator mediator, IFileStorageService fileStorage)
+    public DocumentsController(IMediator mediator, IFileStorageService fileStorage, IApplicationDbContext context)
     {
         _mediator = mediator;
         _fileStorage = fileStorage;
+        _context = context;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetDocuments([FromQuery] Guid? matterId, [FromQuery] Guid? clientId)
+    {
+        var query = _context.Documents.AsNoTracking().Where(d => !d.IsDeleted);
+
+        if (matterId.HasValue) query = query.Where(d => d.MatterId == matterId.Value);
+        if (clientId.HasValue) query = query.Where(d => d.ClientId == clientId.Value);
+
+        var docs = await query
+            .OrderByDescending(d => d.CreatedAt)
+            .Select(d => new
+            {
+                d.Id, d.FileName, d.ContentType, d.FileSizeBytes,
+                d.Version, d.Category, d.Status, d.CreatedAt,
+                d.MatterId, d.ClientId
+            })
+            .Take(50)
+            .ToListAsync();
+
+        return Ok(docs);
     }
 
     [HttpPost]
-    [RequestSizeLimit(50_000_000)] // 50MB limit
+    [RequestSizeLimit(50_000_000)]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> Upload([FromForm] DocumentUploadRequest request)
     {
@@ -46,7 +71,22 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id:guid}/download")]
     public async Task<IActionResult> Download(Guid id)
     {
-        return NotFound("Download endpoint will be fully implemented with document query handler.");
+        var document = await _context.Documents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+
+        if (document is null)
+            return NotFound(new { message = "Document not found." });
+
+        try
+        {
+            var stream = await _fileStorage.DownloadAsync(document.StoragePath);
+            return File(stream, document.ContentType, document.FileName);
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound(new { message = "Document file not found in storage." });
+        }
     }
 }
 
