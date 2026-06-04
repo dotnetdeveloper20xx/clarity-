@@ -318,6 +318,9 @@ node_modules/
 # Angular cache
 .angular/
 
+# Angular build output
+dist/
+
 # Temp scaffolding
 clarity-web-temp/
 
