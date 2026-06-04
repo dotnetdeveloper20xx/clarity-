@@ -92,4 +92,54 @@ public class MattersController : ControllerBase
             .ToListAsync();
         return Ok(tasks);
     }
+
+    [HttpPost("{id:guid}/notes")]
+    public async Task<IActionResult> CreateNote(Guid id, [FromBody] CreateNoteRequest request)
+    {
+        var note = new Clarity.Domain.Entities.MatterNote
+        {
+            MatterId = id,
+            Content = request.Content,
+            IsClientVisible = request.IsClientVisible,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = Guid.Empty // Will be set from current user in production
+        };
+        _context.MatterNotes.Add(note);
+        await _context.SaveChangesAsync();
+        return Ok(note.Id);
+    }
+
+    [HttpPost("{id:guid}/tasks")]
+    public async Task<IActionResult> CreateTask(Guid id, [FromBody] CreateTaskRequest request)
+    {
+        var task = new Clarity.Domain.Entities.MatterTask
+        {
+            MatterId = id,
+            Title = request.Title,
+            Description = request.Description,
+            Priority = (Clarity.Domain.Enums.TaskPriority)request.Priority,
+            DueDate = DateOnly.Parse(request.DueDate),
+            AssigneeId = request.AssigneeId != Guid.Empty ? request.AssigneeId : Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), // Default to Sarah
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = Guid.Empty
+        };
+        _context.MatterTasks.Add(task);
+        await _context.SaveChangesAsync();
+        return Ok(task.Id);
+    }
+}
+
+public record CreateNoteRequest
+{
+    public string Content { get; init; } = string.Empty;
+    public bool IsClientVisible { get; init; }
+}
+
+public record CreateTaskRequest
+{
+    public string Title { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public int Priority { get; init; } = 1;
+    public string DueDate { get; init; } = string.Empty;
+    public Guid AssigneeId { get; init; }
 }

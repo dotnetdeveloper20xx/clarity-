@@ -1,9 +1,13 @@
 import { Component, OnInit, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatterStore } from '../../../core/stores/matter.store';
 import { TimeApiService } from '../../../core/services/time-api.service';
 import { TimeEntryDto, InvoiceDto, PaginatedList } from '../../../core/models/api.models';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../../shared/components/toast/toast.component';
 import { environment } from '@env/environment';
 
 interface TaskDto { id: string; title: string; description: string; status: number; priority: number; dueDate: string; completedAt: string | null; }
@@ -13,7 +17,7 @@ interface DocumentDto { id: string; fileName: string; contentType: string; fileS
 @Component({
   selector: 'app-matter-detail',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule, ModalComponent, ConfirmDialogComponent],
   template: `
     <div class="page-container">
       <div class="mb-6">
@@ -21,10 +25,7 @@ interface DocumentDto { id: string; fileName: string; contentType: string; fileS
       </div>
 
       @if (store.loading()) {
-        <div class="card-section animate-pulse">
-          <div class="h-7 bg-slate-200 rounded w-1/3 mb-4"></div>
-          <div class="h-4 bg-slate-200 rounded w-1/2"></div>
-        </div>
+        <div class="card-section animate-pulse"><div class="h-7 bg-slate-200 rounded w-1/3 mb-4"></div><div class="h-4 bg-slate-200 rounded w-1/2"></div></div>
       }
 
       @if (store.selected(); as matter) {
@@ -34,7 +35,9 @@ interface DocumentDto { id: string; fileName: string; contentType: string; fileS
             <h1 class="page-title">{{ matter.title }}</h1>
             <p class="text-sm text-slate-500 mt-1">{{ matter.referenceNumber }} • {{ matter.clientName }} • {{ getMatterType(matter.matterType) }}</p>
           </div>
-          <span class="px-3 py-1.5 text-xs font-semibold rounded-full" [class]="getStatusClass(matter.status)">{{ getStatusLabel(matter.status) }}</span>
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 text-xs font-semibold rounded-full" [class]="getStatusClass(matter.status)">{{ getStatusLabel(matter.status) }}</span>
+          </div>
         </div>
 
         <!-- Tabs -->
@@ -44,17 +47,20 @@ interface DocumentDto { id: string; fileName: string; contentType: string; fileS
               <button (click)="switchTab(tab.key)" class="pb-3 px-1 text-sm font-medium border-b-2 transition-colors"
                 [class]="activeTab() === tab.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'">
                 {{ tab.label }}
+                @if (tab.key === 'tasks' && tasks().length > 0) { <span class="ml-1 text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">{{ tasks().length }}</span> }
+                @if (tab.key === 'time' && timeEntries().length > 0) { <span class="ml-1 text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">{{ timeEntries().length }}</span> }
+                @if (tab.key === 'documents' && documents().length > 0) { <span class="ml-1 text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">{{ documents().length }}</span> }
               </button>
             }
           </nav>
         </div>
 
-        <!-- Overview Tab -->
+        <!-- OVERVIEW -->
         @if (activeTab() === 'overview') {
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="card-section lg:col-span-2">
               <h2 class="section-title mb-4">Matter Information</h2>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-2 gap-x-8 gap-y-4">
                 <div><div class="data-label">Lead Consultant</div><div class="data-value">{{ matter.leadConsultantName }}</div></div>
                 <div><div class="data-label">Fee Arrangement</div><div class="data-value">{{ ['Hourly', 'Fixed Fee', 'Hybrid'][matter.feeArrangement] }}</div></div>
                 <div><div class="data-label">Estimated Value</div><div class="data-value">{{ matter.estimatedValue ? '£' + matter.estimatedValue.toLocaleString() : '—' }}</div></div>
@@ -70,154 +76,221 @@ interface DocumentDto { id: string; fileName: string; contentType: string; fileS
           </div>
         }
 
-        <!-- Documents Tab -->
-        @if (activeTab() === 'documents') {
-          @if (docsLoading()) {
-            <div class="card-section"><span class="loading loading-spinner loading-md text-blue-600"></span> Loading documents...</div>
-          } @else if (documents().length === 0) {
-            <div class="card-section text-center py-16">
-              <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-              <h3 class="text-base font-semibold text-slate-700">No documents uploaded</h3>
-              <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto">Upload documents to this matter using the Documents API endpoint or the file upload feature.</p>
-            </div>
-          } @else {
-            <div class="card-section overflow-x-auto">
-              <table class="table w-full">
-                <thead><tr><th>File Name</th><th>Category</th><th>Size</th><th>Version</th><th>Uploaded</th><th></th></tr></thead>
-                <tbody>
-                  @for (doc of documents(); track doc.id) {
-                    <tr>
-                      <td class="font-medium text-sm">{{ doc.fileName }}</td>
-                      <td><span class="text-xs px-2 py-0.5 bg-slate-100 rounded text-slate-600">{{ doc.category || 'General' }}</span></td>
-                      <td class="text-xs text-slate-500">{{ formatFileSize(doc.fileSizeBytes) }}</td>
-                      <td class="text-xs">v{{ doc.version }}</td>
-                      <td class="text-xs text-slate-400">{{ doc.createdAt.substring(0, 10) }}</td>
-                      <td><a href="${environment.apiUrl}/documents/{{ doc.id }}/download" target="_blank" class="text-xs text-blue-600 hover:underline">Download</a></td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        }
-
-        <!-- Notes Tab -->
+        <!-- NOTES with Add -->
         @if (activeTab() === 'notes') {
-          @if (notesLoading()) {
-            <div class="card-section"><span class="loading loading-spinner loading-md text-blue-600"></span></div>
-          } @else if (notes().length === 0) {
-            <div class="card-section text-center py-16">
-              <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-              <h3 class="text-base font-semibold text-slate-700">No notes</h3>
-              <p class="text-sm text-slate-500 mt-2">Case notes and observations will appear here.</p>
-            </div>
-          } @else {
-            <div class="space-y-3">
-              @for (note of notes(); track note.id) {
-                <div class="card-section">
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs text-slate-400">{{ note.createdAt.substring(0, 10) }}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full font-medium" [class]="note.isClientVisible ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'">
-                      {{ note.isClientVisible ? 'Client Visible' : 'Internal Only' }}
-                    </span>
-                  </div>
-                  <p class="text-sm text-slate-700 leading-relaxed">{{ note.content }}</p>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="section-title">Case Notes</h2>
+            <button (click)="showAddNote = true" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg">+ Add Note</button>
+          </div>
+          @if (notes().length === 0 && !notesLoading()) {
+            <div class="card-section text-center py-12"><p class="text-sm text-slate-500">No notes yet. Add the first note to this matter.</p></div>
+          }
+          <div class="space-y-3">
+            @for (note of notes(); track note.id) {
+              <div class="card-section">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs text-slate-400">{{ note.createdAt.substring(0, 10) }}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-medium" [class]="note.isClientVisible ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-slate-100 text-slate-500'">{{ note.isClientVisible ? 'Client Visible' : 'Internal' }}</span>
                 </div>
-              }
-            </div>
-          }
+                <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{{ note.content }}</p>
+              </div>
+            }
+          </div>
         }
 
-        <!-- Tasks Tab -->
+        <!-- TASKS with Add -->
         @if (activeTab() === 'tasks') {
-          @if (tasksLoading()) {
-            <div class="card-section"><span class="loading loading-spinner loading-md text-blue-600"></span></div>
-          } @else if (tasks().length === 0) {
-            <div class="card-section text-center py-16">
-              <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-              <h3 class="text-base font-semibold text-slate-700">No tasks</h3>
-              <p class="text-sm text-slate-500 mt-2">Tasks assigned to this matter will appear here.</p>
-            </div>
-          } @else {
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="section-title">Tasks</h2>
+            <button (click)="showAddTask = true" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg">+ Add Task</button>
+          </div>
+          @if (tasks().length === 0 && !tasksLoading()) {
+            <div class="card-section text-center py-12"><p class="text-sm text-slate-500">No tasks assigned. Create a task to track work.</p></div>
+          }
+          @if (tasks().length > 0) {
             <div class="card-section overflow-x-auto">
-              <table class="table w-full">
-                <thead><tr><th>Task</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
-                <tbody>
-                  @for (task of tasks(); track task.id) {
-                    <tr>
-                      <td class="font-medium text-sm">{{ task.title }}</td>
-                      <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getPriorityClass(task.priority)">{{ getPriorityLabel(task.priority) }}</span></td>
-                      <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getTaskStatusClass(task.status)">{{ getTaskStatusLabel(task.status) }}</span></td>
-                      <td class="text-xs text-slate-500">{{ task.dueDate }}</td>
-                    </tr>
-                  }
-                </tbody>
+              <table class="table w-full"><thead><tr><th>Task</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
+                <tbody>@for (task of tasks(); track task.id) {
+                  <tr><td class="font-medium text-sm">{{ task.title }}</td>
+                    <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getPriorityClass(task.priority)">{{ getPriorityLabel(task.priority) }}</span></td>
+                    <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getTaskStatusClass(task.status)">{{ getTaskStatusLabel(task.status) }}</span></td>
+                    <td class="text-xs text-slate-500">{{ task.dueDate }}</td></tr>
+                }</tbody>
               </table>
             </div>
           }
         }
 
-        <!-- Time Tab -->
+        <!-- DOCUMENTS with Upload -->
+        @if (activeTab() === 'documents') {
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="section-title">Documents</h2>
+            <button (click)="showUploadDoc = true" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg">+ Upload Document</button>
+          </div>
+          @if (documents().length === 0 && !docsLoading()) {
+            <div class="card-section text-center py-12"><p class="text-sm text-slate-500">No documents. Upload files related to this matter.</p></div>
+          }
+          @if (documents().length > 0) {
+            <div class="card-section overflow-x-auto">
+              <table class="table w-full"><thead><tr><th>File Name</th><th>Category</th><th>Size</th><th>Version</th><th>Uploaded</th><th></th></tr></thead>
+                <tbody>@for (doc of documents(); track doc.id) {
+                  <tr><td class="font-medium text-sm">{{ doc.fileName }}</td>
+                    <td><span class="text-xs px-2 py-0.5 bg-slate-100 rounded text-slate-600">{{ doc.category || 'General' }}</span></td>
+                    <td class="text-xs text-slate-500">{{ formatFileSize(doc.fileSizeBytes) }}</td>
+                    <td class="text-xs">v{{ doc.version }}</td>
+                    <td class="text-xs text-slate-400">{{ doc.createdAt.substring(0, 10) }}</td>
+                    <td><a href="${environment.apiUrl}/documents/{{ doc.id }}/download" target="_blank" class="text-xs text-blue-600 hover:underline font-medium">Download</a></td></tr>
+                }</tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <!-- TIME with Record -->
         @if (activeTab() === 'time') {
-          @if (timeLoading()) {
-            <div class="card-section"><span class="loading loading-spinner loading-md text-blue-600"></span></div>
-          } @else if (timeEntries().length === 0) {
-            <div class="card-section text-center py-16">
-              <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <h3 class="text-base font-semibold text-slate-700">No time recorded</h3>
-              <p class="text-sm text-slate-500 mt-2">Time entries for this matter will appear here.</p>
-            </div>
-          } @else {
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="section-title">Time Entries</h2>
+            <button (click)="showRecordTime = true" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg">+ Record Time</button>
+          </div>
+          @if (timeEntries().length === 0 && !timeLoading()) {
+            <div class="card-section text-center py-12"><p class="text-sm text-slate-500">No time recorded against this matter yet.</p></div>
+          }
+          @if (timeEntries().length > 0) {
             <div class="card-section overflow-x-auto">
-              <table class="table w-full">
-                <thead><tr><th>Date</th><th>Fee Earner</th><th>Description</th><th>Duration</th><th>Billable</th><th>Status</th></tr></thead>
-                <tbody>
-                  @for (entry of timeEntries(); track entry.id) {
-                    <tr>
-                      <td class="text-xs whitespace-nowrap">{{ entry.date }}</td>
-                      <td class="text-sm whitespace-nowrap">{{ entry.userName }}</td>
-                      <td class="text-sm max-w-xs truncate">{{ entry.description }}</td>
-                      <td class="text-sm whitespace-nowrap font-medium">{{ formatDuration(entry.durationMinutes) }}</td>
-                      <td>@if (entry.isBillable) { <span class="text-xs status-active px-2 py-0.5 rounded-full">Billable</span> } @else { <span class="text-xs status-closed px-2 py-0.5 rounded-full">Non-billable</span> }</td>
-                      <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getTimeStatusClass(entry.status)">{{ getTimeStatusLabel(entry.status) }}</span></td>
-                    </tr>
-                  }
-                </tbody>
+              <table class="table w-full"><thead><tr><th>Date</th><th>Fee Earner</th><th>Description</th><th>Duration</th><th>Billable</th><th>Status</th></tr></thead>
+                <tbody>@for (entry of timeEntries(); track entry.id) {
+                  <tr><td class="text-xs">{{ entry.date }}</td><td class="text-sm">{{ entry.userName }}</td>
+                    <td class="text-sm max-w-xs truncate">{{ entry.description }}</td>
+                    <td class="text-sm font-medium">{{ formatDuration(entry.durationMinutes) }}</td>
+                    <td>@if (entry.isBillable) { <span class="text-xs status-active px-2 py-0.5 rounded-full">Billable</span> } @else { <span class="text-xs status-closed px-2 py-0.5 rounded-full">Non-billable</span> }</td>
+                    <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getTimeStatusClass(entry.status)">{{ getTimeStatusLabel(entry.status) }}</span></td></tr>
+                }</tbody>
               </table>
             </div>
           }
         }
 
-        <!-- Billing Tab -->
+        <!-- BILLING -->
         @if (activeTab() === 'billing') {
-          @if (invoicesLoading()) {
-            <div class="card-section"><span class="loading loading-spinner loading-md text-blue-600"></span></div>
-          } @else if (invoices().length === 0) {
-            <div class="card-section text-center py-16">
-              <svg class="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <h3 class="text-base font-semibold text-slate-700">No invoices</h3>
-              <p class="text-sm text-slate-500 mt-2">Invoices for this matter will appear once generated from approved time.</p>
-            </div>
-          } @else {
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="section-title">Invoices</h2>
+          </div>
+          @if (invoices().length === 0 && !invoicesLoading()) {
+            <div class="card-section text-center py-12"><p class="text-sm text-slate-500">No invoices generated for this matter yet.</p></div>
+          }
+          @if (invoices().length > 0) {
             <div class="card-section overflow-x-auto">
-              <table class="table w-full">
-                <thead><tr><th>Invoice #</th><th>Status</th><th>Issue Date</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead>
-                <tbody>
-                  @for (inv of invoices(); track inv.id) {
-                    <tr>
-                      <td class="font-mono text-sm font-semibold">{{ inv.invoiceNumber }}</td>
-                      <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getInvoiceStatusClass(inv.status)">{{ getInvoiceStatusLabel(inv.status) }}</span></td>
-                      <td class="text-xs text-slate-500">{{ inv.issueDate || '—' }}</td>
-                      <td class="font-medium text-sm">£{{ inv.totalAmount.toLocaleString() }}</td>
-                      <td class="text-sm text-emerald-600">£{{ inv.paidAmount.toLocaleString() }}</td>
-                      <td class="text-sm font-medium text-amber-600">£{{ (inv.totalAmount - inv.paidAmount).toLocaleString() }}</td>
-                    </tr>
-                  }
-                </tbody>
+              <table class="table w-full"><thead><tr><th>Invoice #</th><th>Status</th><th>Issue Date</th><th>Total</th><th>Paid</th><th>Outstanding</th></tr></thead>
+                <tbody>@for (inv of invoices(); track inv.id) {
+                  <tr><td class="font-mono text-sm font-semibold">{{ inv.invoiceNumber }}</td>
+                    <td><span class="text-xs px-2 py-0.5 rounded-full font-medium" [class]="getInvoiceStatusClass(inv.status)">{{ getInvoiceStatusLabel(inv.status) }}</span></td>
+                    <td class="text-xs text-slate-500">{{ inv.issueDate || '—' }}</td>
+                    <td class="font-medium text-sm">£{{ inv.totalAmount.toLocaleString() }}</td>
+                    <td class="text-sm text-emerald-600">£{{ inv.paidAmount.toLocaleString() }}</td>
+                    <td class="text-sm font-medium text-amber-600">£{{ (inv.totalAmount - inv.paidAmount).toLocaleString() }}</td></tr>
+                }</tbody>
               </table>
             </div>
           }
         }
+      }
+
+      <!-- ADD NOTE MODAL -->
+      @if (showAddNote) {
+        <app-modal title="Add Note" size="lg" (closed)="showAddNote = false">
+          <div class="space-y-4">
+            <div><label class="text-xs font-medium text-slate-600 block mb-1">Note Content *</label>
+              <textarea [(ngModel)]="newNote.content" rows="5" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Enter case note..."></textarea>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" [(ngModel)]="newNote.isClientVisible" id="clientVisible" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <label for="clientVisible" class="text-sm text-slate-700">Visible to client</label>
+            </div>
+          </div>
+          <div footer>
+            <button (click)="showAddNote = false" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+            <button (click)="saveNote()" [disabled]="!newNote.content" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">Save Note</button>
+          </div>
+        </app-modal>
+      }
+
+      <!-- ADD TASK MODAL -->
+      @if (showAddTask) {
+        <app-modal title="Add Task" size="lg" (closed)="showAddTask = false">
+          <div class="space-y-4">
+            <div><label class="text-xs font-medium text-slate-600 block mb-1">Title *</label>
+              <input [(ngModel)]="newTask.title" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Task title">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div><label class="text-xs font-medium text-slate-600 block mb-1">Priority</label>
+                <select [(ngModel)]="newTask.priority" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                  <option [ngValue]="0">Low</option><option [ngValue]="1">Medium</option><option [ngValue]="2">High</option><option [ngValue]="3">Urgent</option>
+                </select>
+              </div>
+              <div><label class="text-xs font-medium text-slate-600 block mb-1">Due Date *</label>
+                <input type="date" [(ngModel)]="newTask.dueDate" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+              </div>
+            </div>
+            <div><label class="text-xs font-medium text-slate-600 block mb-1">Description</label>
+              <textarea [(ngModel)]="newTask.description" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="Task description..."></textarea>
+            </div>
+          </div>
+          <div footer>
+            <button (click)="showAddTask = false" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+            <button (click)="saveTask()" [disabled]="!newTask.title || !newTask.dueDate" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">Create Task</button>
+          </div>
+        </app-modal>
+      }
+
+      <!-- UPLOAD DOCUMENT MODAL -->
+      @if (showUploadDoc) {
+        <app-modal title="Upload Document" size="md" (closed)="showUploadDoc = false">
+          <div class="space-y-4">
+            <div><label class="text-xs font-medium text-slate-600 block mb-1">File *</label>
+              <input type="file" (change)="onFileSelect($event)" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
+            </div>
+            <div><label class="text-xs font-medium text-slate-600 block mb-1">Category</label>
+              <select [(ngModel)]="uploadCategory" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">General</option><option value="Contract">Contract</option><option value="Correspondence">Correspondence</option>
+                <option value="Evidence">Evidence</option><option value="Court Filing">Court Filing</option><option value="Research">Research</option>
+              </select>
+            </div>
+          </div>
+          <div footer>
+            <button (click)="showUploadDoc = false" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+            <button (click)="uploadDocument()" [disabled]="!selectedFile || uploading()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+              @if (uploading()) { <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span> }
+              Upload
+            </button>
+          </div>
+        </app-modal>
+      }
+
+      <!-- RECORD TIME MODAL -->
+      @if (showRecordTime) {
+        <app-modal title="Record Time Entry" size="lg" (closed)="showRecordTime = false">
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div><label class="text-xs font-medium text-slate-600 block mb-1">Date *</label>
+                <input type="date" [(ngModel)]="newTime.date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+              </div>
+              <div><label class="text-xs font-medium text-slate-600 block mb-1">Duration (minutes) *</label>
+                <input type="number" [(ngModel)]="newTime.durationMinutes" min="1" max="720" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+              </div>
+            </div>
+            <div><label class="text-xs font-medium text-slate-600 block mb-1">Description *</label>
+              <textarea [(ngModel)]="newTime.description" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="Describe the work performed..."></textarea>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" [(ngModel)]="newTime.isBillable" id="billable" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <label for="billable" class="text-sm text-slate-700">Billable</label>
+            </div>
+          </div>
+          <div footer>
+            <button (click)="showRecordTime = false" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
+            <button (click)="saveTimeEntry()" [disabled]="!newTime.date || !newTime.description || !newTime.durationMinutes" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">Save Time Entry</button>
+          </div>
+        </app-modal>
       }
     </div>
   `
@@ -225,29 +298,33 @@ interface DocumentDto { id: string; fileName: string; contentType: string; fileS
 export class MatterDetailComponent implements OnInit {
   id = input.required<string>();
   activeTab = signal('overview');
-  timeEntries = signal<TimeEntryDto[]>([]);
-  timeLoading = signal(false);
-  invoices = signal<InvoiceDto[]>([]);
-  invoicesLoading = signal(false);
-  tasks = signal<TaskDto[]>([]);
-  tasksLoading = signal(false);
-  notes = signal<NoteDto[]>([]);
-  notesLoading = signal(false);
-  documents = signal<DocumentDto[]>([]);
-  docsLoading = signal(false);
+  timeEntries = signal<TimeEntryDto[]>([]); timeLoading = signal(false);
+  invoices = signal<InvoiceDto[]>([]); invoicesLoading = signal(false);
+  tasks = signal<TaskDto[]>([]); tasksLoading = signal(false);
+  notes = signal<NoteDto[]>([]); notesLoading = signal(false);
+  documents = signal<DocumentDto[]>([]); docsLoading = signal(false);
+  uploading = signal(false);
+
+  showAddNote = false; showAddTask = false; showUploadDoc = false; showRecordTime = false;
+  newNote = { content: '', isClientVisible: false };
+  newTask = { title: '', description: '', priority: 1, dueDate: '' };
+  newTime = { date: '', durationMinutes: 60, description: '', isBillable: true };
+  selectedFile: File | null = null;
+  uploadCategory = '';
 
   tabs = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'documents', label: 'Documents' },
-    { key: 'notes', label: 'Notes' },
-    { key: 'tasks', label: 'Tasks' },
-    { key: 'time', label: 'Time Entries' },
-    { key: 'billing', label: 'Billing' },
+    { key: 'overview', label: 'Overview' }, { key: 'notes', label: 'Notes' },
+    { key: 'tasks', label: 'Tasks' }, { key: 'documents', label: 'Documents' },
+    { key: 'time', label: 'Time Entries' }, { key: 'billing', label: 'Billing' },
   ];
 
-  constructor(public store: MatterStore, private timeApi: TimeApiService, private http: HttpClient) {}
+  constructor(public store: MatterStore, private timeApi: TimeApiService, private http: HttpClient, private toast: ToastService) {}
 
-  ngOnInit(): void { this.store.loadMatter(this.id()); }
+  ngOnInit(): void {
+    this.store.loadMatter(this.id());
+    this.newTime.date = new Date().toISOString().split('T')[0];
+    this.newTask.dueDate = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+  }
 
   switchTab(tab: string): void {
     this.activeTab.set(tab);
@@ -258,30 +335,60 @@ export class MatterDetailComponent implements OnInit {
     if (tab === 'documents' && this.documents().length === 0) this.loadDocuments();
   }
 
-  private loadTime(): void {
-    this.timeLoading.set(true);
-    this.timeApi.getTimeEntries({ matterId: this.id() }).subscribe({ next: r => { this.timeEntries.set(r.items); this.timeLoading.set(false); }, error: () => this.timeLoading.set(false) });
-  }
-  private loadInvoices(): void {
-    this.invoicesLoading.set(true);
-    this.http.get<PaginatedList<InvoiceDto>>(`${environment.apiUrl}/invoices?matterId=${this.id()}`).subscribe({ next: r => { this.invoices.set(r.items); this.invoicesLoading.set(false); }, error: () => this.invoicesLoading.set(false) });
-  }
-  private loadTasks(): void {
-    this.tasksLoading.set(true);
-    this.http.get<TaskDto[]>(`${environment.apiUrl}/matters/${this.id()}/tasks`).subscribe({ next: r => { this.tasks.set(r); this.tasksLoading.set(false); }, error: () => this.tasksLoading.set(false) });
-  }
-  private loadNotes(): void {
-    this.notesLoading.set(true);
-    this.http.get<NoteDto[]>(`${environment.apiUrl}/matters/${this.id()}/notes`).subscribe({ next: r => { this.notes.set(r); this.notesLoading.set(false); }, error: () => this.notesLoading.set(false) });
-  }
-  private loadDocuments(): void {
-    this.docsLoading.set(true);
-    this.http.get<DocumentDto[]>(`${environment.apiUrl}/documents?matterId=${this.id()}`).subscribe({ next: r => { this.documents.set(r); this.docsLoading.set(false); }, error: () => this.docsLoading.set(false) });
+  // --- CRUD Operations ---
+  saveNote(): void {
+    this.http.post(`${environment.apiUrl}/matters/${this.id()}/notes`, this.newNote).subscribe({
+      next: () => { this.showAddNote = false; this.newNote = { content: '', isClientVisible: false }; this.notes.set([]); this.loadNotes(); this.toast.success('Note added successfully'); },
+      error: () => this.toast.error('Failed to add note')
+    });
   }
 
+  saveTask(): void {
+    const payload = { ...this.newTask, matterId: this.id(), assigneeId: '00000000-0000-0000-0000-000000000000' };
+    this.http.post(`${environment.apiUrl}/matters/${this.id()}/tasks`, payload).subscribe({
+      next: () => { this.showAddTask = false; this.newTask = { title: '', description: '', priority: 1, dueDate: '' }; this.tasks.set([]); this.loadTasks(); this.toast.success('Task created successfully'); },
+      error: () => this.toast.error('Failed to create task')
+    });
+  }
+
+  saveTimeEntry(): void {
+    const payload = { ...this.newTime, matterId: this.id() };
+    this.timeApi.recordTime(payload).subscribe({
+      next: () => { this.showRecordTime = false; this.newTime = { date: new Date().toISOString().split('T')[0], durationMinutes: 60, description: '', isBillable: true }; this.timeEntries.set([]); this.loadTime(); this.toast.success('Time entry recorded'); },
+      error: () => this.toast.error('Failed to record time')
+    });
+  }
+
+  onFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile = input.files?.[0] ?? null;
+  }
+
+  uploadDocument(): void {
+    if (!this.selectedFile) return;
+    this.uploading.set(true);
+    const formData = new FormData();
+    formData.append('file', this.selectedFile);
+    formData.append('matterId', this.id());
+    if (this.uploadCategory) formData.append('category', this.uploadCategory);
+
+    this.http.post(`${environment.apiUrl}/documents`, formData).subscribe({
+      next: () => { this.showUploadDoc = false; this.selectedFile = null; this.uploadCategory = ''; this.uploading.set(false); this.documents.set([]); this.loadDocuments(); this.toast.success('Document uploaded successfully'); },
+      error: () => { this.uploading.set(false); this.toast.error('Failed to upload document'); }
+    });
+  }
+
+  // --- Data Loading ---
+  private loadTime(): void { this.timeLoading.set(true); this.timeApi.getTimeEntries({ matterId: this.id() }).subscribe({ next: r => { this.timeEntries.set(r.items); this.timeLoading.set(false); }, error: () => this.timeLoading.set(false) }); }
+  private loadInvoices(): void { this.invoicesLoading.set(true); this.http.get<PaginatedList<InvoiceDto>>(`${environment.apiUrl}/invoices?matterId=${this.id()}`).subscribe({ next: r => { this.invoices.set(r.items); this.invoicesLoading.set(false); }, error: () => this.invoicesLoading.set(false) }); }
+  private loadTasks(): void { this.tasksLoading.set(true); this.http.get<TaskDto[]>(`${environment.apiUrl}/matters/${this.id()}/tasks`).subscribe({ next: r => { this.tasks.set(r); this.tasksLoading.set(false); }, error: () => this.tasksLoading.set(false) }); }
+  private loadNotes(): void { this.notesLoading.set(true); this.http.get<NoteDto[]>(`${environment.apiUrl}/matters/${this.id()}/notes`).subscribe({ next: r => { this.notes.set(r); this.notesLoading.set(false); }, error: () => this.notesLoading.set(false) }); }
+  private loadDocuments(): void { this.docsLoading.set(true); this.http.get<DocumentDto[]>(`${environment.apiUrl}/documents?matterId=${this.id()}`).subscribe({ next: r => { this.documents.set(r); this.docsLoading.set(false); }, error: () => this.docsLoading.set(false) }); }
+
+  // --- Helpers ---
   formatDuration(mins: number): string { const h = Math.floor(mins / 60); const m = mins % 60; return h > 0 ? `${h}h ${m}m` : `${m}m`; }
   formatFileSize(bytes: number): string { if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'; return (bytes / 1048576).toFixed(1) + ' MB'; }
-  getStatusLabel(s: number): string { return ['Open', 'In Progress', 'On Hold', 'Awaiting Client', 'Awaiting Third Party', 'Billing Review', 'Closed', 'Archived'][s] ?? 'Unknown'; }
+  getStatusLabel(s: number): string { return ['Open', 'In Progress', 'On Hold', 'Awaiting Client', 'Awaiting Third Party', 'Billing Review', 'Closed', 'Archived'][s] ?? ''; }
   getStatusClass(s: number): string { return ['status-info', 'status-active', 'status-warning', 'status-warning', 'status-warning', 'status-pending', 'status-closed', 'status-closed'][s] ?? ''; }
   getMatterType(t: number): string { return ['Conveyancing', 'Litigation', 'Family Law', 'Commercial', 'Employment', 'Criminal', 'Immigration', 'Wills & Probate', 'Personal Injury', 'Other'][t] ?? 'Other'; }
   getTimeStatusLabel(s: number): string { return ['Draft', 'Submitted', 'Approved', 'Rejected', 'Billed', 'Written Off'][s] ?? ''; }
