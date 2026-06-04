@@ -11,11 +11,14 @@ import { AuthService } from '../core/services/auth.service';
       <!-- Sidebar -->
       <aside class="w-64 bg-navy-900 text-white flex flex-col shadow-lg">
         <div class="p-4 border-b border-navy-700">
-          <h1 class="text-xl font-bold tracking-wide">Clarity</h1>
-          <p class="text-xs text-navy-300 mt-1">Legal Practice Management</p>
+          <a routerLink="/dashboard" class="block">
+            <h1 class="text-xl font-bold tracking-wide">Clarity</h1>
+            <p class="text-xs text-navy-300 mt-1">Legal Practice Management</p>
+          </a>
         </div>
 
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <div class="text-xs text-navy-400 uppercase tracking-wider mb-2 mt-2">Main</div>
           <a routerLink="/dashboard" routerLinkActive="bg-navy-700" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-navy-800 transition-colors">
             <span>📊</span> Dashboard
           </a>
@@ -25,26 +28,37 @@ import { AuthService } from '../core/services/auth.service';
           <a routerLink="/matters" routerLinkActive="bg-navy-700" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-navy-800 transition-colors">
             <span>📁</span> Matters
           </a>
+
+          <div class="text-xs text-navy-400 uppercase tracking-wider mb-2 mt-4">Work</div>
           <a routerLink="/time-recording" routerLinkActive="bg-navy-700" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-navy-800 transition-colors">
             <span>⏱️</span> Time Recording
           </a>
+
           @if (auth.hasAnyRole(['Finance', 'Admin'])) {
+            <div class="text-xs text-navy-400 uppercase tracking-wider mb-2 mt-4">Finance</div>
             <a routerLink="/billing" routerLinkActive="bg-navy-700" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-navy-800 transition-colors">
-              <span>💰</span> Billing
+              <span>💰</span> Billing & Invoices
             </a>
           }
+
           @if (auth.hasAnyRole(['Compliance', 'Admin'])) {
+            <div class="text-xs text-navy-400 uppercase tracking-wider mb-2 mt-4">Compliance</div>
             <a routerLink="/compliance" routerLinkActive="bg-navy-700" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-navy-800 transition-colors">
               <span>🛡️</span> Compliance
             </a>
           }
+
+          <div class="text-xs text-navy-400 uppercase tracking-wider mb-2 mt-4">Other</div>
+          <a routerLink="/notifications" routerLinkActive="bg-navy-700" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-navy-800 transition-colors">
+            <span>🔔</span> Notifications
+          </a>
         </nav>
 
         <div class="p-4 border-t border-navy-700">
-          <div class="text-sm text-navy-300">{{ auth.fullName() }}</div>
-          <div class="text-xs text-navy-400">{{ auth.roles().join(', ') }}</div>
-          <button (click)="auth.logout()" class="mt-2 text-xs text-navy-400 hover:text-white transition-colors">
-            Sign out
+          <div class="text-sm text-navy-300 font-medium">{{ auth.fullName() }}</div>
+          <div class="text-xs text-navy-400 mt-0.5">{{ auth.roles().join(', ') }}</div>
+          <button (click)="auth.logout()" class="mt-3 text-xs text-navy-400 hover:text-white transition-colors flex items-center gap-1">
+            <span>↩</span> Sign out
           </button>
         </div>
       </aside>
@@ -56,8 +70,10 @@ import { AuthService } from '../core/services/auth.service';
           <div class="text-sm text-navy-600 font-medium">
             Welcome back, {{ auth.fullName() }}
           </div>
-          <div class="flex items-center gap-4">
-            <button class="btn btn-ghost btn-sm btn-circle">🔔</button>
+          <div class="flex items-center gap-2">
+            <a routerLink="/notifications" class="btn btn-ghost btn-sm btn-circle relative">
+              🔔
+            </a>
           </div>
         </header>
 

@@ -55,7 +55,7 @@ import { InvoiceDto, PaginatedList } from '../../../core/models/api.models';
                   <td><span class="badge badge-sm" [class]="getInvoiceStatusClass(inv.status)">{{ getInvoiceStatusLabel(inv.status) }}</span></td>
                   <td class="font-medium">£{{ inv.totalAmount.toLocaleString() }}</td>
                   <td class="text-green-600">£{{ inv.paidAmount.toLocaleString() }}</td>
-                  <td class="text-amber-600 font-medium">£{{ inv.outstandingAmount.toLocaleString() }}</td>
+                  <td class="text-amber-600 font-medium">£{{ (inv.totalAmount - inv.paidAmount).toLocaleString() }}</td>
                 </tr>
               }
             </tbody>
@@ -86,10 +86,11 @@ export class InvoiceListComponent implements OnInit {
     this.loading.set(true);
     this.http.get<PaginatedList<InvoiceDto>>(`${environment.apiUrl}/invoices`).subscribe({
       next: (result) => {
-        this.items.set(result.items);
-        this.draftCount.set(result.items.filter(i => i.status === 0).length);
-        this.outstandingTotal.set(result.items.reduce((sum, i) => sum + i.outstandingAmount, 0));
-        this.paidTotal.set(result.items.filter(i => i.status === 3).reduce((sum, i) => sum + i.totalAmount, 0));
+        const items = result.items.map(i => ({ ...i, outstandingAmount: i.totalAmount - i.paidAmount }));
+        this.items.set(items);
+        this.draftCount.set(items.filter(i => i.status === 0).length);
+        this.outstandingTotal.set(items.filter(i => i.status === 1 || i.status === 2).reduce((sum, i) => sum + i.outstandingAmount, 0));
+        this.paidTotal.set(items.filter(i => i.status === 3).reduce((sum, i) => sum + i.totalAmount, 0));
         this.loading.set(false);
       },
       error: () => this.loading.set(false)

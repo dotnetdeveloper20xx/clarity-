@@ -18,6 +18,7 @@ export const routes: Routes = [
       { path: 'time-recording', loadComponent: () => import('./features/time-recording/time-list/time-list.component').then(m => m.TimeListComponent) },
       { path: 'billing', loadComponent: () => import('./features/billing/invoice-list/invoice-list.component').then(m => m.InvoiceListComponent) },
       { path: 'compliance', loadComponent: () => import('./features/compliance/compliance-list/compliance-list.component').then(m => m.ComplianceListComponent) },
+      { path: 'notifications', loadComponent: () => import('./features/notifications/notification-list/notification-list.component').then(m => m.NotificationListComponent) },
     ]
   },
   { path: '**', redirectTo: '' }
