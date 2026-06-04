@@ -14,7 +14,20 @@ import { MatterStore } from '../../../core/stores/matter.store';
       </div>
 
       <div class="card-section mb-6">
-        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Search matters..." class="input input-bordered input-sm w-full max-w-md" />
+        <div class="flex gap-4 flex-wrap">
+          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Search matters..." class="input input-bordered input-sm flex-1 min-w-[200px]" />
+          <select [(ngModel)]="statusFilter" (ngModelChange)="onSearch()" class="select select-bordered select-sm">
+            <option [ngValue]="undefined">All Statuses</option>
+            <option [ngValue]="0">Open</option>
+            <option [ngValue]="1">In Progress</option>
+            <option [ngValue]="2">On Hold</option>
+            <option [ngValue]="3">Awaiting Client</option>
+            <option [ngValue]="4">Awaiting 3rd Party</option>
+            <option [ngValue]="5">Billing Review</option>
+            <option [ngValue]="6">Closed</option>
+            <option [ngValue]="7">Archived</option>
+          </select>
+        </div>
       </div>
 
       @if (store.loading()) {
@@ -69,6 +82,7 @@ import { MatterStore } from '../../../core/stores/matter.store';
 })
 export class MatterListComponent implements OnInit {
   searchTerm = '';
+  statusFilter: number | undefined;
 
   constructor(public store: MatterStore) {}
 
@@ -77,7 +91,7 @@ export class MatterListComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.store.loadMatters({ searchTerm: this.searchTerm });
+    this.store.loadMatters({ searchTerm: this.searchTerm, status: this.statusFilter });
   }
 
   getMatterStatusLabel(status: number): string {
