@@ -1,11 +1,12 @@
 import { Component, OnInit, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { ClientStore } from '../../../core/stores/client.store';
 
 @Component({
   selector: 'app-client-detail',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe],
   template: `
     <div class="page-container">
       <div class="mb-4">
